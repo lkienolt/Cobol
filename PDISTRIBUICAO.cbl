@@ -192,7 +192,7 @@
        0000-CONTROLE SECTION.
        0000.
            PERFORM 1000-INICIO THRU 1000-INICIO-FIM.
-           PERFORM 2000-PROCESSO UNTIL FS-TERMINA.
+           PERFORM 2000-PROCESSO UNTIL COB-CRT-STATUS = COB-SCR-ESC.
            PERFORM 8000-FINALIZA THRU 8000-FINALIZA-FIM.
            GOBACK.
 
@@ -217,56 +217,40 @@
        2000.
            ACCEPT  WS-HORA FROM TIME
            ACCEPT  WS-DATA FROM DATE
-           MOVE "GERACAO" TO WS-OP
+           MOVE "GERACAO"           TO WS-OP
            MOVE "ESC PARA ENCERRAR" TO WS-STATUS
 
            MOVE ZEROS               TO FS-EXIT.
            DISPLAY SS-TELA-REGISTRO
            DISPLAY SS-GERACAO
 
-           PERFORM 6000-GERAR THRU 6000-GERAR-FIM
-                   UNTIL COB-CRT-STATUS = COB-SCR-ESC.
+           ACCEPT T-ARQUIVO
+           IF WS-ARQIMP EQUAL SPACES
+              MOVE "FAVOR INFORMAR O NOME DO ARQUIVO" TO WS-MSGERRO
+              DISPLAY WS-MSGERRO at 2118
+           ELSE
+              MOVE WS-ARQIMP TO WID-ARQUIVO-GER
+              PERFORM 9050-ABRIR-ARQUIVOS
+
+              MOVE "N"       TO WS-ERRO
+              MOVE "CONFIRMA A GERACAO DO ARQUIVO (S/N)?" TO
+                   WS-MSGERRO
+              ACCEPT SS-ERRO
+              IF E-SIM THEN
+                 PERFORM 9200-LE-CLIENTE
+                 PERFORM 6100-GERACAO UNTIL FS-TERMINA
+                 DISPLAY WS-LIMPA AT 0728
+                 MOVE "ARQUIVO GERADO COM SUCESSO" TO WS-MSGERRO
+                 DISPLAY WS-MSGERRO AT 2118
+                 CLOSE FILE3
+                 MOVE SPACES TO WS-ARQIMP
+              ELSE
+                 MOVE 99     to FS-EXIT
+                 MOVE SPACES TO WS-MSGERRO
+                 DISPLAY WS-LIMPA AT 2118
+               END-IF.
 
        2000-PROCESSO-FIM.
-           EXIT.
-
-      * ----------------------------------
-       6000-GERAR SECTION.
-       6000.
-           PERFORM UNTIL COB-CRT-STATUS = COB-SCR-ESC
-
-                ACCEPT T-ARQUIVO
-                IF WS-ARQIMP EQUAL SPACES
-                   MOVE "FAVOR INFORMAR O CAMINHO DO ARQUIVO" TO
-                        WS-MSGERRO
-                   DISPLAY WS-MSGERRO at 2118
-                ELSE
-                   MOVE WS-ARQIMP TO WID-ARQUIVO-GER
-                   PERFORM 9050-ABRIR-ARQUIVOS
-
-                   MOVE "N"       TO WS-ERRO
-                   MOVE "CONFIRMA A GERACAO DO ARQUIVO (S/N)?" TO
-                        WS-MSGERRO
-                   ACCEPT SS-ERRO
-                   IF E-SIM THEN
-                      PERFORM 9200-LE-CLIENTE
-                      PERFORM 6100-GERACAO UNTIL FS-TERMINA
-                      DISPLAY WS-LIMPA AT 0728
-                      MOVE "ARQUIVO GERADO COM SUCESSO" TO WS-MSGERRO
-                      DISPLAY WS-MSGERRO AT 2118
-                      CLOSE FILE3
-                      MOVE SPACES TO WS-ARQIMP
-                      DISPLAY SS-TELA-REGISTRO
-                      DISPLAY SS-GERACAO
-                   ELSE
-                      MOVE SPACES TO WS-MSGERRO
-                      DISPLAY WS-LIMPA AT 2118
-                   END-IF
-               END-IF
-
-           END-PERFORM.
-
-       6000-GERAR-FIM.
            EXIT.
 
        6100-GERACAO SECTION.
